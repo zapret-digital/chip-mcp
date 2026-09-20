@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "chip": {
+      "type": "http",
+      "url": "https://chip-ai.digital/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${CHIP_MCP_TOKEN}"
+      }
+    }
+  }
+}

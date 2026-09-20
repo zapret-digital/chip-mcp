@@ -1,0 +1,13 @@
+{
+  "name": "chip",
+  "version": "1.0.1",
+  "description": "Chip project memory for Claude Code: the MCP server, session-ritual hooks and the /chip:start and /chip:finish commands.",
+  "author": {
+    "name": "Chip",
+    "url": "https://chip-ai.digital"
+  },
+  "homepage": "https://chip-ai.digital/mcp",
+  "repository": "https://github.com/zapret-digital/chip-mcp",
+  "license": "MIT",
+  "keywords": ["memory", "notes", "telegram", "mcp"]
+}

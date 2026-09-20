@@ -1,0 +1,770 @@
+{
+  "name": "chip",
+  "version": "1.3.1",
+  "title": "Чип MCP",
+  "description": "Память проектов, задачи и уведомления в Telegram для агента в IDE. Сервер к Telegram-боту «Чип».",
+  "websiteUrl": "https://chip-ai.digital/mcp",
+  "transport": {
+    "type": "streamable-http",
+    "url": "https://chip-ai.digital/mcp",
+    "auth": "Bearer chip_mcp_* (мини-приложение бота → «Chip MCP»)"
+  },
+  "instructions": "Чип — ассистент пользователя в Telegram (бот @ChipAI_robot). Этот сервер — мост к его аккаунту: память проектов, уведомления в Telegram, генерация картинок. В начале сессии вызови whoami, чтобы узнать тариф и лимиты пользователя. Взялся за проект — начинай с whats_new: вернулся в знакомый, получишь только изменения (дешевле полного контекста), впервые — он сам отдаст полный контекст; открытые поручения пользователя смотри в list_tasks и закрывай сделанное через complete_task. Удаление проектов из IDE недоступно: если пользователь просит удалить проект — направь его в мини-приложение бота, вкладка «Рабочее пространство».",
+  "profiles": {
+    "full": [
+      "add_note",
+      "add_task",
+      "archive_project",
+      "ask_user",
+      "attach_file",
+      "check_confirmation",
+      "complete_task",
+      "create_project",
+      "finalize_upload",
+      "generate_image",
+      "get_project_context",
+      "get_project_map",
+      "list_files",
+      "list_projects",
+      "list_tasks",
+      "notify_me",
+      "read_journal",
+      "read_map_section",
+      "read_project_dialog",
+      "read_project_file",
+      "rename_project",
+      "save_session_summary",
+      "search_project",
+      "set_reminder",
+      "upload_project_file",
+      "whats_new",
+      "whoami"
+    ],
+    "read": [
+      "get_project_context",
+      "list_files",
+      "list_projects",
+      "list_tasks",
+      "read_journal",
+      "read_map_section",
+      "read_project_dialog",
+      "read_project_file",
+      "search_project",
+      "whats_new",
+      "whoami"
+    ]
+  },
+  "tools": [
+    {
+      "name": "add_note",
+      "description": "Заметка в память проекта (до ~300 символов; грабли и правки — 600). Пиши по ходу: одно наблюдение — одна заметка. kind: decision — сделанный выбор (полочка «Решения»), fact — как устроено, preference — как любит пользователь, progress — что сделано, pitfall — грабли «симптом → причина → лечение» (полочка «Грабли»), correction — «раньше X, теперь Y». Решение пиши формулой «что решали → выбрали X вместо Y, потому что Z»: ✓ «Очередь задач: Redis вместо Kafka — один инстанс, 200 rps». ✗ «Используем Redis» — следующая сессия переспорит то же самое.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "default": "fact",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "text"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "add_task",
+      "description": "Поручение следующей сессии агента: хвост из «Осталось», который не успел сделать. Пользователь видит его в мини-аппе, следующая сессия — в list_tasks.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "text"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "archive_project",
+      "description": "Архивировать проект: уходит из списка, слот освобождается, данные целы. Зови, когда пользователю нужен слот под новый. Вернуть из архива и удалить проект может только он сам, в мини-аппе.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "ask_user",
+      "description": "Спросить пользователя кнопками в Telegram, когда упёрся в развилку, которую решает он сам («какую БД берём?»). НЕ для мелочей, решаемых здравым смыслом. options — 2–4 коротких варианта (по умолчанию Да/Нет). Молчит — вернётся id для check_confirmation.",
+      "readOnly": false,
+      "annotations": {
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "attach_file",
+      "description": "Вложение для notify_me: скриншот после правки интерфейса, PDF, лог. В проект не сохраняется, живёт до отправки.",
+      "readOnly": false,
+      "annotations": {
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filename",
+          "size_bytes"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "check_confirmation",
+      "description": "Забрать ответ пользователя на вопрос ask_user (если тот вернул id). Зови не чаще раза в минуту-другую.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "ask_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ask_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "complete_task",
+      "description": "Закрыть поручение из list_tasks: result — что сделано (1–2 фразы, до 500 символов, пользователь прочитает это в Telegram). Зови СРАЗУ по факту, не пачкой в конце. Не закрывай то, за что не брался.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "task_id": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "result"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "create_project",
+      "description": "Завести проект в Чипе. Зови по просьбе пользователя — или предложи сам, если работаете над задачей без проекта. Название — по сути задачи, до 60 символов.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "finalize_upload",
+      "description": "Завершить двухфазную загрузку файла: зови ПОСЛЕ того, как curl из ответа upload_project_file отработал успешно.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "upload_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "upload_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "generate_image",
+      "description": "Сгенерировать картинку 1024×1024. ПЛАТНО: списывает с баланса пользователя ~3 кредита — зови по его запросу, не «на пробу». С project_id PNG ляжет в файлы проекта, без него — временная ссылка, скачай сразу.",
+      "readOnly": false,
+      "annotations": {
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "prompt": {
+            "type": "string"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_project_context",
+      "description": "Контекст проекта: инструкции, поручения, оглавление карты, память, файлы, диалоги. Зови ОДИН раз, когда берёшься за проект впервые; вернулся в знакомый — whats_new, он дешевле. depth: \"brief\" (сводки аннотациями, по умолчанию) или \"full\" (дословно).",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "depth": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_project_map",
+      "description": "Оглавление карты проекта: полочки-статьи с актуальным знанием, которые Чип ведёт по журналу (не лента). Сама статья — read_map_section.",
+      "readOnly": false,
+      "annotations": {
+        "readOnlyHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_files",
+      "description": "Файлы базы знаний проекта: имя, размер, читаемость. Зови перед read_project_file, если точное имя неизвестно.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_projects",
+      "description": "Проекты пользователя: id, название, последняя активность, открытые поручения. Нужен project_id — сюда; список меняется редко, не перечитывай.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      }
+    },
+    {
+      "name": "list_tasks",
+      "description": "Поручения тебе в этом проекте: их ставит пользователь и прошлая сессия (add_task, хвосты «Осталось»). Зови в начале работы и когда ищешь, чем заняться дальше. Сделанное закрывай complete_task — незакрытое всплывёт снова.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "notify_me",
+      "description": "Сообщение пользователю в Telegram: итог долгой задачи («тесты зелёные», «сборка упала»), важное событие. НЕ для болтовни и не для вопросов — вопрос задавай в сессии. До 1000 символов. Показать скриншот, PDF или лог — сначала attach_file, потом сюда upload_id.",
+      "readOnly": false,
+      "annotations": {
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "upload_id": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "read_journal",
+      "description": "Журнал проекта дословно, новые сверху: сводки сессий и заметки-вехи. Зови за «что было N сессий назад»; поиск по теме — search_project. offset 0 — свежие, дальше листай по подсказке в конце ответа.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "offset": {
+            "default": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "read_map_section",
+      "description": "Статья одной полочки карты — актуальное знание по теме («Решения», «Грабли»…). Зови по оглавлению из get_project_context или get_project_map.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "section": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "section"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "read_project_dialog",
+      "description": "Диалог пользователя с Чипом внутри проекта: сводка и последние реплики. Сценарий: надиктовал план с телефона — забери целиком, а не пересказ. Без session_id — самый свежий; id диалогов в get_project_context.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "read_project_file",
+      "description": "Текст файла из базы знаний проекта, страницами. Без page у длинного документа придёт оглавление — выбери раздел и позови с page=N; дальше листай по подсказке в конце ответа.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "page": {
+            "default": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "project_id",
+          "filename"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "rename_project",
+      "description": "Переименовать проект (до 60 символов). Только по явной просьбе пользователя.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "name"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "save_session_summary",
+      "description": "Сводка рабочей сессии — в журнал проекта. Зови В КОНЦЕ сессии или перед долгой паузой, один раз — не дроби. Структура: Сделано → Решения и почему (включая отвергнутые) → Грабли → Осталось. До 6000 символов, на языке пользователя.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "text"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "search_project",
+      "description": "Поиск по знанию проекта: полочки карты, журнал, память, диалоги. Зови за конкретным фактом или старым решением, которого нет в контексте. Без project_id — по всем проектам сразу. Запрос — 1–3 ключевых слова, не предложение. kind сужает память до вида (decision, pitfall, fact, preference, progress, correction); since (ISO, как курсор) режет старое.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "kind": {
+            "default": "",
+            "type": "string"
+          },
+          "since": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "set_reminder",
+      "description": "Напоминание пользователю в Telegram — для отложенных проверок и дедлайнов. when — ISO-время («2026-07-25T10:00»), без пояса = локальное время пользователя. Текст до 200 символов.",
+      "readOnly": false,
+      "annotations": {
+        "openWorldHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "when"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "upload_project_file",
+      "description": "Выгрузить файл в проект (md, txt, csv, json, pdf, docx, xlsx и др.) — пользователь откроет его с телефона. Зови, когда результат нужен ему в Чипе; код оставляй в репозитории. До ~20k символов — сразу в content, крупнее — укажи size_bytes и загрузи по инструкции из ответа. Картинки — generate_image. ПЛАТНО для многостраничного PDF: оглавление к нему списывает кредиты пользователя.",
+      "readOnly": false,
+      "annotations": {
+        "destructiveHint": false
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "size_bytes": {
+            "default": 0,
+            "type": "integer"
+          },
+          "content": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id",
+          "filename"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "whats_new",
+      "description": "Изменения в проекте с твоего прошлого захода: журнал, поручения, файлы, полочки карты, диалоги. Зови ПЕРВЫМ, как взялся за проект: в знакомом — только дельта, впервые — сразу полный контекст. Скажет «изменений много» — добери get_project_context. since — из «Курсора» прошлого ответа, session — метка твоей ветки: покажу соседние сессии этого токена.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {
+          "project_id": {
+            "type": "integer"
+          },
+          "since": {
+            "default": "",
+            "type": "string"
+          },
+          "session": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "project_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "whoami",
+      "description": "Тариф, занятость слотов проектов и (на платном тарифе) остатки дневных лимитов. Зови в начале сессии и когда другой тул отказал по лимиту.",
+      "readOnly": true,
+      "annotations": {
+        "readOnlyHint": true
+      },
+      "inputSchema": {
+        "properties": {},
+        "type": "object"
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "finish",
+      "description": "Закрыть сессию: сводка в журнал, решения и грабли в память, хвост — в поручения.",
+      "arguments": [
+        {
+          "name": "project_id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "pitfall",
+      "description": "Записать граблю в память проекта: симптом → причина → лечение.",
+      "arguments": [
+        {
+          "name": "project_id",
+          "required": true
+        },
+        {
+          "name": "text",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "start",
+      "description": "Начать сессию в проекте: что изменилось с прошлого захода и какие поручения открыты.",
+      "arguments": [
+        {
+          "name": "project_id",
+          "required": true
+        },
+        {
+          "name": "session",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "uriTemplate": "chip://project/{id}/context",
+      "name": "«Проект»: контекст",
+      "description": "Контекст проекта: инструкции, поручения, решения, грабли, оглавление карты, память, файлы, диалоги.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uriTemplate": "chip://project/{id}/tasks",
+      "name": "«Проект»: поручения",
+      "description": "Открытые поручения пользователя агенту в этом проекте.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uriTemplate": "chip://project/{id}/journal",
+      "name": "«Проект»: последние сводки",
+      "description": "Журнал проекта: свежие сводки рабочих сессий дословно.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uriTemplate": "chip://project/{id}/decisions",
+      "name": "«Проект»: решения",
+      "description": "Полочка «Решения» целиком: что решали, что выбрали и почему.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uriTemplate": "chip://project/{id}/pitfalls",
+      "name": "«Проект»: грабли",
+      "description": "Полочка «Грабли» целиком: симптом → причина → лечение.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "uriTemplate": "chip://project/{id}/map/{node_id}",
+      "name": "«Проект»: <название полочки>",
+      "description": "Статья одной полочки карты проекта.",
+      "mimeType": "text/markdown"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "chip-ai",
+  "description": "Chip: project memory, tasks and Telegram notifications for your coding agent.",
+  "owner": {
+    "name": "Chip",
+    "url": "https://chip-ai.digital"
+  },
+  "plugins": [
+    {
+      "name": "chip",
+      "source": "./plugin",
+      "description": "Chip project memory for Claude Code: the MCP server, session-ritual hooks and the /chip:start and /chip:finish commands.",
+      "category": "productivity",
+      "homepage": "https://chip-ai.digital/mcp"
+    }
+  ]
+}

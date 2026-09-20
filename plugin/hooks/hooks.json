@@ -1,0 +1,39 @@
+{
+  "description": "Чип: ритуал сессии — дельта проекта на старте, напоминание про сводку перед сжатием контекста и на стопе",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/session_start.sh\"",
+            "timeout": 25
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/precompact.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/stop.sh\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
