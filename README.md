@@ -106,7 +106,7 @@ The hooks never block a session — no token, no network, no `python3` or `curl`
 you get one line of explanation instead of a failed start.
 
 *For local development:* `CHIP_MCP_URL` re-points **the hooks only**, and only at the
-production address or a loopback stand (`http://127.0.0.1:8092/mcp/`); anything else
+production address or a loopback stand (`http://127.0.0.1:PORT/mcp/`); anything else
 is refused. The MCP channel itself ignores the variable, so no repository can send
 your token to its own host through `.claude/settings.json`.
 
