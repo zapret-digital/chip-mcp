@@ -27,8 +27,8 @@ o200k_base` counting — not an estimate:
 | returning after a day of edits | 2538 tokens | 295 tokens |
 
 **A read-only token costs less to even list.** The tool list is paid for by every
-session before the first call: 27 tools = 2905 tokens, the 11 read-only ones = 1155.
-If your agent only reads the project, issue a `read` token and save 1750 tokens per
+session before the first call: 32 tools = 3254 tokens, the 11 read-only ones = 1125.
+If your agent only reads the project, issue a `read` token and save 2129 tokens per
 session.
 
 **Your agent can reach you.** `notify_me` pushes a message to your Telegram when a
@@ -38,9 +38,10 @@ instead of guessing.
 
 ## Install
 
-You need a free account: open [@ChipAI_robot](https://t.me/ChipAI_robot) in Telegram
-→ mini app → **Chip MCP** → issue a token (`chip_mcp_…`). Choose **read** if you want
-the agent to look but never touch.
+You need a Chip account: open [@ChipAI_robot](https://t.me/ChipAI_robot) in Telegram
+→ mini app → **Chip MCP** → issue a token (`chip_mcp_…`). The account and the token are
+free; project memory and Telegram messages need the **Basic** plan (see
+[Pricing](#pricing)). Choose **read** if you want the agent to look but never touch.
 
 **Claude Code**
 
@@ -112,7 +113,7 @@ your token to its own host through `.claude/settings.json`.
 
 ## Tools
 
-27 tools. `read` tokens get the 11 marked *read*; `full` tokens get everything.
+32 tools. `read` tokens get the 11 marked *read*; `full` tokens get everything.
 
 <!-- tools:start -->
 | Tool | Access | Arguments |
@@ -125,13 +126,18 @@ your token to its own host through `.claude/settings.json`.
 | `check_confirmation` | write | `ask_id` |
 | `complete_task` | write | `task_id`, `result` |
 | `create_project` | write | `name` |
+| `errand_cancel` | write | `errand_id` |
+| `errand_plan` | write | `goal`, `project_id`, `files`, `run_at`, `ready_by` |
+| `errand_result` | write | `errand_id` |
+| `errand_start` | write | `errand_id`, `mode`, `max_credits` |
+| `errand_status` | write | `errand_id` |
 | `finalize_upload` | write | `upload_id` |
 | `generate_image` | write | `prompt`, `project_id` |
 | `get_project_context` | read | `project_id`, `depth` |
 | `get_project_map` | write | `project_id` |
 | `list_files` | read | `project_id` |
 | `list_projects` | read | — |
-| `list_tasks` | read | `project_id` |
+| `list_tasks` | read | `project_id`, `offset`, `task_id` |
 | `notify_me` | write | `text`, `upload_id` |
 | `read_journal` | read | `project_id`, `offset` |
 | `read_map_section` | read | `project_id`, `section` |
@@ -178,9 +184,11 @@ It diffs the committed spec against `https://chip-ai.digital/mcp/spec.json`.
 
 ## Pricing
 
-Connecting is free. Reading your own projects is free. Writes, Telegram messages and
-image generation are metered against your Chip plan — the tools tell your agent when
-a limit is reached and what to do about it. Plans live in the Telegram bot.
+The account and connecting are free. Projects (memory, tasks, journal) and Telegram
+messages open with the **Basic** plan. Reading your projects is not metered; writes,
+Telegram messages and image generation count against your plan's limits — the tools
+tell your agent when a limit is reached and what to do about it. Plans live in the
+Telegram bot.
 
 ## Links
 

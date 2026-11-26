@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.2 · 2026-11-26
+
+- Errands from the IDE: `errand_plan` → `errand_start` → `errand_status`, `errand_result`, `errand_cancel`. A multi-step background task (search, table, report, deck): the plan and the price come before the start, the user approves it, and it is paid with Chip credits. 32 tools.
+- `list_tasks`: pages of 20 with `offset`; `task_id` returns one task in full.
+- `add_note`: agent notes up to 500 characters (pitfalls and corrections stay at 600). A longer note is refused with a request to shorten it, before the daily write limit is touched; a duplicate or empty note gives its write back.
+- `add_task`: when the open-task limit is reached, the refusal lists the oldest tasks with their ids.
+- `generate_image`: the description states the current price.
+- README: what is free and what needs the Basic plan.
+
 ## 1.3.1 · 2026-09-10
 
 - Claude Code plugin: marketplace `chip-ai`, session hooks (SessionStart, PreCompact, Stop), commands `/chip:start` and `/chip:finish`, `.chip.json` for the project id.
