@@ -1,55 +1,94 @@
-# Chip MCP
+<p align="center">
+  <img src="assets/hero-en.svg" width="100%" alt="An agent session: the agent asks Chip what changed, gets three changes since its last visit for 63 tokens, fixes a task and sends a message to the user's Telegram">
+</p>
 
-**Project memory, tasks and Telegram notifications for your coding agent.**
+<h3 align="center">Project memory, tasks and Telegram notifications for your coding agent</h3>
 
-[Русская версия](README.ru.md) · [chip-ai.digital/mcp](https://chip-ai.digital/mcp)
+<p align="center">
+  <a href="README.ru.md">Русская версия</a> ·
+  <a href="https://chip-ai.digital/mcp">chip-ai.digital/mcp</a> ·
+  <a href="https://t.me/ChipAI_robot">Telegram bot</a> ·
+  <a href="https://chip-ai.digital/mcp/spec.json">Live spec</a>
+</p>
 
-Chip is an assistant living in Telegram. This MCP server connects your IDE agent —
-Claude Code, Cursor, anything that speaks MCP — to the same account. Decisions you
-made yesterday, notes your agent wrote last session, tasks you assigned from your
-phone: all still there when the next session starts with an empty context window.
+Every new agent session starts with an empty context. Chip is the part that doesn't:
+an MCP server that connects Claude Code, Cursor or any other MCP client to your Chip
+account, where the project's decisions, pitfalls, tasks and history live between
+sessions.
 
 > **Language note.** Chip is a Russian-language product: the tools answer in Russian
 > and billing is in rubles. Everything works from any country, but if you don't read
 > Russian, the responses will not be useful to you.
 
-## Why bother
+## What your agent gets
 
-**Returning to a project costs 63 tokens instead of 2538.** Your agent calls
-`whats_new` and gets only what changed since its last visit, not the whole project
-again. Measured 2026-09-10 on a reference mature project with real `tiktoken
-o200k_base` counting — not an estimate:
+**Memory that outlives the context window.** Decisions with the reason behind them,
+pitfalls written as *symptom → cause → fix*, a journal of sessions and a map of the
+project. A new session calls `whats_new` and gets only what changed since its last
+visit.
 
-| scenario | before | after |
+**Tasks from your phone.** Drop a task in Telegram and the agent finds it in
+`list_tasks`, then closes it with `complete_task` and a line about what was done. The
+agent can leave tasks for its own next session with `add_task`.
+
+**A way to reach you.** `notify_me` sends a message to your Telegram when a long build
+finishes. `ask_user` asks a question with buttons, and `check_confirmation` picks up
+the answer later, so an agent working alone waits for your decision instead of
+guessing. `set_reminder` schedules a nudge for later.
+
+**Errands in the background.** `errand_plan` turns a goal into a multi-step job
+(search, a table, a report, a deck) and shows the plan and the price before anything
+runs. You approve it, and `errand_result` brings back the report and the files.
+
+<p align="center">
+  <img src="assets/how-it-works-en.svg" width="100%" alt="Scheme: the agent in your IDE sends notes, decisions and session summaries to Chip and gets back only what changed; you send tasks from Telegram and get notifications, questions and reminders; your code never leaves your machine">
+</p>
+
+## In numbers
+
+<p align="center">
+  <img src="assets/tokens-en.svg" width="100%" alt="Returning to a project: 63 tokens when nothing changed, 295 after a day of edits, 2284 on the first visit, against 2538 for loading the whole project">
+</p>
+
+Coming back to a project costs 63 tokens instead of 2538: the agent reads the delta,
+not the whole project again. Measured on a reference mature project with real
+`tiktoken o200k_base` counting, not estimated.
+
+<details>
+<summary>The same numbers as a table</summary>
+
+| scenario | whole project | with `whats_new` |
 |---|---:|---:|
 | first visit to a project | 2538 tokens | 2284 tokens |
 | returning, nothing changed | 2538 tokens | **63 tokens** |
 | returning after a day of edits | 2538 tokens | 295 tokens |
 
-**A read-only token costs less to even list.** The tool list is paid for by every
-session before the first call: 32 tools = 3254 tokens, the 11 read-only ones = 1125.
-If your agent only reads the project, issue a `read` token and save 2129 tokens per
-session.
+</details>
 
-**Your agent can reach you.** `notify_me` pushes a message to your Telegram when a
-long build finishes; `ask_user` asks a question with buttons and `check_confirmation`
-picks up the answer later — so an agent working alone can wait for a human decision
-instead of guessing.
+<p align="center">
+  <img src="assets/read-token-en.svg" width="100%" alt="The tool list costs 3254 tokens with a full token and 1125 with a read-only token, 65% less">
+</p>
+
+The tool list is paid for by every session before the first call: 32 tools = 3254
+tokens, the 11 read-only ones = 1125. If your agent only reads the project, issue a
+`read` token and save 2129 tokens per session.
 
 ## Install
 
-You need a Chip account: open [@ChipAI_robot](https://t.me/ChipAI_robot) in Telegram
-→ mini app → **Chip MCP** → issue a token (`chip_mcp_…`). The account and the token are
+**1. Get a token.** Open [@ChipAI_robot](https://t.me/ChipAI_robot) in Telegram →
+mini app → **Chip MCP** → issue a token (`chip_mcp_…`). The account and the token are
 free; project memory and Telegram messages need the **Basic** plan (see
 [Pricing](#pricing)). Choose **read** if you want the agent to look but never touch.
 
-**Claude Code**
+**2. Connect your client.**
+
+Claude Code:
 
 ```bash
 claude mcp add --transport http chip https://chip-ai.digital/mcp --header "Authorization: Bearer chip_mcp_YOUR_TOKEN"
 ```
 
-**Cursor** — `~/.cursor/mcp.json` (or `.cursor/mcp.json` in the project):
+Cursor — `~/.cursor/mcp.json` (or `.cursor/mcp.json` in the project):
 
 ```json
 {
@@ -63,15 +102,15 @@ claude mcp add --transport http chip https://chip-ai.digital/mcp --header "Autho
 ```
 
 Any other client that takes an `mcpServers` entry with `url` + `headers` works the
-same way. See [docs/clients.md](docs/clients.md) for more.
+same way. More clients in [docs/clients.md](docs/clients.md).
 
-Then tell your agent to start with `whats_new` — the server's own instructions say so
-too, so most agents do it unprompted.
+**3. Start with `whats_new`.** The server's own instructions say so too, so most
+agents do it unprompted.
 
 ## Claude Code plugin
 
-Claude Code can install everything at once — the server, the session ritual and two
-commands — instead of you wiring up the config by hand.
+One install instead of wiring the config by hand: the server, the session ritual and
+two commands.
 
 ```bash
 export CHIP_MCP_TOKEN=chip_mcp_YOUR_TOKEN
@@ -99,17 +138,22 @@ The hooks need a `.chip.json` in the repository root to know which project this 
 
 The mini app sends it to you — project settings, **«Правила для IDE-агента»**, next to
 `AGENTS.md`. Telegram strips the leading dot from attachment names, so rename the file
-back to `.chip.json` after saving. Without the file the hooks stay quiet — except for
+back to `.chip.json` after saving. Without the file the hooks stay quiet, except for
 one line at session start saying this repository has no `.chip.json`. The plugin still
 works, the session just starts without the delta.
 
-The hooks never block a session — no token, no network, no `python3` or `curl`, and
-you get one line of explanation instead of a failed start.
+The hooks never block a session. No token, no network, no `python3` or `curl` — you
+get one line of explanation instead of a failed start.
 
-*For local development:* `CHIP_MCP_URL` re-points **the hooks only**, and only at the
-production address or a loopback stand (`http://127.0.0.1:PORT/mcp/`); anything else
-is refused. The MCP channel itself ignores the variable, so no repository can send
-your token to its own host through `.claude/settings.json`.
+<details>
+<summary>For local development</summary>
+
+`CHIP_MCP_URL` re-points **the hooks only**, and only at the production address or a
+loopback stand (`http://127.0.0.1:PORT/mcp/`); anything else is refused. The MCP
+channel itself ignores the variable, so no repository can send your token to its own
+host through `.claude/settings.json`.
+
+</details>
 
 ## Tools
 
@@ -157,7 +201,7 @@ deliberate: fetching it also refreshes the project map, so a read-only token doe
 get it. `read_map_section` reads a single entry without side effects.
 
 Machine-readable: [spec.json](spec.json), generated from the server's own tool
-registry — see below.
+registry.
 
 ## What the server can and cannot see
 
@@ -174,7 +218,7 @@ registry — see below.
 ## Verify the spec yourself
 
 `spec.json` in this repo is generated from the live server's tool registry, so it
-cannot quietly drift from reality. Check it against production yourself:
+cannot quietly drift from reality. Check it against production:
 
 ```bash
 ./scripts/verify.sh
@@ -187,14 +231,9 @@ It diffs the committed spec against `https://chip-ai.digital/mcp/spec.json`.
 The account and connecting are free. Projects (memory, tasks, journal) and Telegram
 messages open with the **Basic** plan. Reading your projects is not metered; writes,
 Telegram messages and image generation count against your plan's limits — the tools
-tell your agent when a limit is reached and what to do about it. Plans live in the
+tell your agent when a limit is reached and what to do about it. Errands are paid
+with Chip credits, and the price is shown before the start. Plans live in the
 Telegram bot.
-
-## Links
-
-- [Landing page and docs](https://chip-ai.digital/mcp)
-- [Telegram bot](https://t.me/ChipAI_robot)
-- [Live spec](https://chip-ai.digital/mcp/spec.json)
 
 ## License
 
